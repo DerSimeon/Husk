@@ -42,6 +42,14 @@ On the first start Husk writes `husk.conf` into the working directory. Edit it a
 
 Set `HUSK_DEBUG=1` to log every packet going in and out.
 
+Or with Docker. Every push to main publishes a new image:
+
+```bash
+docker run -p 25565:25565 -v husk-data:/data ghcr.io/dersimeon/husk:latest
+```
+
+`husk.conf` and the `roots/` folder live in `/data`.
+
 ## Writing a root
 
 Depend on `husk-api` as `compileOnly`, implement `lol.simeon.husk.api.Root` and point to your class in the jar manifest:

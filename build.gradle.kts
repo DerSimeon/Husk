@@ -1,15 +1,15 @@
+import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
     alias(libs.plugins.kotlin) apply false
     alias(libs.plugins.shadow) apply false
-    // detekt: kept in the catalog but not applied — 1.23.8 doesn't support Kotlin 2.4 / JDK 25.
-    // Re-apply once a detekt release supports this toolchain.
     alias(libs.plugins.detekt) apply false
 }
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "dev.detekt")
 
     group = "lol.simeon"
     version = "1.0-SNAPSHOT"
@@ -20,5 +20,12 @@ subprojects {
 
     extensions.configure<KotlinJvmProjectExtension> {
         jvmToolchain(25)
+    }
+
+    extensions.configure<DetektExtension> {
+        buildUponDefaultConfig = true
+        config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+        // Pre-existing findings; CI fails only on new ones. Regenerate with ./gradlew detektBaseline.
+        baseline = file("detekt-baseline.xml")
     }
 }

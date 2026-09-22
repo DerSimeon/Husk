@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.20"
 shadow = "9.6.1"
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.6" # first line with Kotlin 2.4 + JDK 25 support
 netty = "4.2.18.Final"
 mycelium = "1.0.3"
 adventure = "5.2.0"
@@ -10,7 +10,7 @@ typesafe-config = "1.4.3"
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 
 [libraries]
 netty-all = { module = "io.netty:netty-all", version.ref = "netty" }

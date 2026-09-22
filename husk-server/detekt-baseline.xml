@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ConnectionHandler.kt:ConnectionHandler$override fun channelRead0</ID>
+    <ID>CyclomaticComplexMethod:JoinFlowTest.kt:JoinFlowTest$private fun join</ID>
+    <ID>ForbiddenComment:NettyServer.kt:NettyServer.&lt;no name provided>$// TODO: compression stages once Set Compression is sent.</ID>
+    <ID>LongMethod:PlayPackets.kt:PlayPackets$fun register</ID>
+    <ID>MagicNumber:VarIntFrameDecoder.kt:VarIntFrameDecoder$0x7F</ID>
+    <ID>MagicNumber:VarIntFrameDecoder.kt:VarIntFrameDecoder$0x80</ID>
+    <ID>MagicNumber:VarIntFrameDecoder.kt:VarIntFrameDecoder$7</ID>
+    <ID>MaxLineLength:ConnectionHandler.kt:ConnectionHandler$RegistryDataPacket(registry.registryId, registry.entries.map { RegistryDataPacket.Entry(it.key, null) })</ID>
+    <ID>MaxLineLength:ConnectionHandler.kt:ConnectionHandler$ctx.write(PlayerPositionPacket(x = 0.0, y = if (waitsForChunks) 64.0 else ABOVE_BUILD_LIMIT, z = 0.0, yaw = 0f, pitch = 0f, flags = 0, teleportId = 1))</ID>
+    <ID>MaxLineLength:ConnectionHandler.kt:ConnectionHandler$if</ID>
+    <ID>MaxLineLength:PacketDecoder.kt:PacketDecoder$throw DecoderException("IN ${connection.state}/0x%02x -> %s: %d bytes remaining".format(id, packet.javaClass.simpleName, msg.readableBytes()))</ID>
+    <ID>MaxLineLength:PlayPackets.kt:JoinGamePacket$if (version.isAtLeast(Version.MINECRAFT_1_16_2)) buf.writeVarInt(MAX_PLAYERS) else buf.buf.writeByte(MAX_PLAYERS)</ID>
+    <ID>MaxLineLength:PlayPackets.kt:JoinGamePacket$if (version.isAtLeast(Version.MINECRAFT_1_20_5)) buf.writeVarInt(dimensionId) else buf.writeString(dimensionName)</ID>
+    <ID>ReturnCount:VarIntFrameDecoder.kt:VarIntFrameDecoder$override fun decode</ID>
+    <ID>TooGenericExceptionCaught:Main.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RootLoader.kt:RootLoader$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RootManager.kt:RootManager$e: Exception</ID>
+    <ID>WildcardImport:NettyServer.kt:import io.netty.channel.*</ID>
+  </CurrentIssues>
+</SmellBaseline>
