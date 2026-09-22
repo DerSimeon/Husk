@@ -1,0 +1,14 @@
+### IDEA ###
+.idea/
+*.iml
+
+### GRADLE ###
+.gradle/
+build/
+
+### KOTLIN ###
+.kotlin/
+
+### HUSK ###
+husk.conf
+!husk-server/src/main/resources/husk.conf

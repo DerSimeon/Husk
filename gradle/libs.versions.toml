@@ -1,0 +1,21 @@
+[versions]
+kotlin = "2.4.20"
+shadow = "9.6.1"
+detekt = "1.23.8"
+netty = "4.2.18.Final"
+mycelium = "1.0.3"
+adventure = "5.2.0"
+typesafe-config = "1.4.3"
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+
+[libraries]
+netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
+mycelium = { module = "lol.simeon:mycelium", version.ref = "mycelium" }
+adventure-api = { module = "net.kyori:adventure-api", version.ref = "adventure" }
+adventure-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure" }
+adventure-gson = { module = "net.kyori:adventure-text-serializer-gson", version.ref = "adventure" }
+typesafe-config = { module = "com.typesafe:config", version.ref = "typesafe-config" }
