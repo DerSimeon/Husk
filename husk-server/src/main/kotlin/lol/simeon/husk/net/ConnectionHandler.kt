@@ -17,6 +17,9 @@ import lol.simeon.husk.protocol.packet.KnownPack
 import lol.simeon.husk.protocol.packet.KnownPacksResponsePacket
 import lol.simeon.husk.protocol.packet.KeepAlivePacket
 import lol.simeon.husk.protocol.packet.LoginAcknowledgedPacket
+import lol.simeon.husk.protocol.packet.LoginDisconnectPacket
+import lol.simeon.husk.protocol.packet.LoginPluginRequestPacket
+import lol.simeon.husk.protocol.packet.LoginPluginResponsePacket
 import lol.simeon.husk.protocol.packet.LoginStartPacket
 import lol.simeon.husk.protocol.packet.LoginSuccessPacket
 import lol.simeon.husk.protocol.packet.PingRequestPacket
@@ -72,19 +75,9 @@ class ConnectionHandler(
             is PingRequestPacket -> ctx.writeAndFlush(PongResponsePacket(packet.payload))
                 .addListener { ctx.close() }
 
-            is LoginStartPacket -> {
-                val uuid = packet.uuid ?: offlineUuid(packet.username)
-                playerUuid = uuid
-                playerName = packet.username
-                Log.info("Login: ${packet.username} ($uuid) on ${connection.protocolVersion}")
-                ctx.writeAndFlush(LoginSuccessPacket(uuid, packet.username))
-                // Pre-1.20.2 clients jump straight to PLAY after Login Success; newer ones send
-                // Login Acknowledged first (handled below) to enter CONFIGURATION.
-                if (!connection.protocolVersion.isAtLeast(Version.MINECRAFT_1_20_2)) {
-                    connection.state = ConnectionState.PLAY
-                    enterPlay(ctx)
-                }
-            }
+            is LoginStartPacket -> onLoginStart(ctx, packet)
+
+            is LoginPluginResponsePacket -> onForwardingResponse(ctx, packet)
 
             is LoginAcknowledgedPacket -> {
                 connection.state = ConnectionState.CONFIGURATION
@@ -142,6 +135,44 @@ class ConnectionHandler(
             ctx.write(CodecRegistryDataPacket(prepared.codec))
         }
         ctx.writeAndFlush(FinishConfigurationPacket())
+    }
+
+    private fun onLoginStart(ctx: ChannelHandlerContext, packet: LoginStartPacket) {
+        if (!config.forwarding.velocityModern) {
+            completeLogin(ctx, packet.uuid ?: offlineUuid(packet.username), packet.username)
+        } else if (connection.protocol < VELOCITY_MIN_PROTOCOL) {
+            ctx.disconnectLogin("This server requires a 1.13+ client connecting through the proxy.")
+        } else {
+            // Don't trust the claimed name/UUID: ask the proxy for its signed player info first.
+            pendingLoginName = packet.username
+            val request = byteArrayOf(VelocityForwarding.REQUEST_VERSION)
+            ctx.writeAndFlush(LoginPluginRequestPacket(VELOCITY_MESSAGE_ID, VelocityForwarding.CHANNEL, request))
+        }
+    }
+
+    private fun onForwardingResponse(ctx: ChannelHandlerContext, packet: LoginPluginResponsePacket) {
+        val expected = config.forwarding.velocityModern && packet.messageId == VELOCITY_MESSAGE_ID && packet.successful
+        val profile = if (expected) VelocityForwarding.verify(config.forwarding.secret, packet.data) else null
+        if (profile == null) {
+            val from = ctx.channel().remoteAddress()
+            Log.warn("Rejected ${pendingLoginName ?: "?"} from $from: no valid Velocity forwarding data")
+            ctx.disconnectLogin("Unable to verify player details. Connect through the proxy.")
+        } else {
+            completeLogin(ctx, profile.uuid, profile.username)
+        }
+    }
+
+    private fun completeLogin(ctx: ChannelHandlerContext, uuid: UUID, username: String) {
+        playerUuid = uuid
+        playerName = username
+        Log.info("Login: $username ($uuid) on ${connection.protocolVersion}")
+        ctx.writeAndFlush(LoginSuccessPacket(uuid, username))
+        // Pre-1.20.2 clients jump straight to PLAY after Login Success; newer ones send
+        // Login Acknowledged first (handled above) to enter CONFIGURATION.
+        if (!connection.protocolVersion.isAtLeast(Version.MINECRAFT_1_20_2)) {
+            connection.state = ConnectionState.PLAY
+            enterPlay(ctx)
+        }
     }
 
     private fun enterPlay(ctx: ChannelHandlerContext) {
@@ -213,10 +244,6 @@ class ConnectionHandler(
     private fun escape(s: String): String =
         s.replace("\\", "\\\\").replace("\"", "\\\"")
 
-    /** Offline-mode UUID: name-based, matching the vanilla `OfflinePlayer:<name>` scheme. */
-    private fun offlineUuid(name: String): UUID =
-        UUID.nameUUIDFromBytes("OfflinePlayer:$name".toByteArray(Charsets.UTF_8))
-
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         Log.error("Connection error from ${ctx.channel().remoteAddress()}: ${cause.message}")
         ctx.close()
@@ -225,6 +252,7 @@ class ConnectionHandler(
     private var keepAlive: ScheduledFuture<*>? = null
     private var playerUuid: UUID = UUID(0, 0)
     private var playerName: String = "player"
+    private var pendingLoginName: String? = null
 
     private companion object {
         /**
@@ -250,6 +278,8 @@ class ConnectionHandler(
             777 to listOf("26.3"),
         )
 
+        const val VELOCITY_MESSAGE_ID = 1
+        const val VELOCITY_MIN_PROTOCOL = 393 // login plugin messages exist from 1.13
         const val STATUS_INTENT = 1
         const val SPECTATOR = 3
         const val LEVEL_CHUNKS_LOAD_START = 13

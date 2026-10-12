@@ -13,6 +13,16 @@ data class PingConfig(
     val description: String,
 )
 
+/**
+ * Player-info forwarding. [velocityModern] makes Husk complete Velocity's modern forwarding
+ * handshake with [secret] and take the player's name and UUID from it, instead of trusting
+ * the Login Start packet. Required when the proxy runs `player-info-forwarding-mode = "modern"`.
+ */
+data class ForwardingConfig(
+    val velocityModern: Boolean,
+    val secret: String,
+)
+
 /** Server configuration, loaded from `husk.conf` (HOCON) with classpath defaults as fallback. */
 data class HuskConfig(
     val host: String,
@@ -23,6 +33,7 @@ data class HuskConfig(
     val dimension: String,
     val playerList: Boolean,
     val ping: PingConfig,
+    val forwarding: ForwardingConfig = ForwardingConfig(velocityModern = false, secret = ""),
     val readTimeout: Long = 30000L,
 ) {
     companion object {
@@ -50,6 +61,13 @@ data class HuskConfig(
             dimension = c.getString("dimension"),
             playerList = c.getBoolean("player-list"),
             readTimeout = c.getLong("read-timeout"),
+            forwarding = c.getConfig("forwarding").let {
+                val mode = it.getString("mode").lowercase()
+                require(mode == "none" || mode == "velocity") { "forwarding.mode must be none or velocity: '$mode'" }
+                val secret = it.getString("secret")
+                require(mode == "none" || secret.isNotBlank()) { "forwarding.mode = velocity needs forwarding.secret" }
+                ForwardingConfig(velocityModern = mode == "velocity", secret = secret)
+            },
             ping = c.getConfig("ping").let {
                 PingConfig(
                     versionName = it.getString("version-name"),
