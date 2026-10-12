@@ -19,6 +19,18 @@ class LoginDisconnectPacket(val reasonJson: String) : ClientboundPacket {
     override fun encode(buf: ByteMessage, version: Version) = buf.writeString(reasonJson)
 }
 
+/** Login Plugin Request (1.13+): asks the client — or a proxy in front of us — to answer on [channel]. */
+class LoginPluginRequestPacket(val messageId: Int, val channel: String, val data: ByteArray) : ClientboundPacket {
+    override fun encode(buf: ByteMessage, version: Version) {
+        buf.writeVarInt(messageId)
+        buf.writeString(channel)
+        buf.buf.writeBytes(data)
+    }
+}
+
+/** Answer to a [LoginPluginRequestPacket]. [data] is the rest of the packet, empty when not [successful]. */
+class LoginPluginResponsePacket(val messageId: Int, val successful: Boolean, val data: ByteArray) : ServerboundPacket
+
 class SetCompressionPacket(val threshold: Int) : ClientboundPacket {
     override fun encode(buf: ByteMessage, version: Version) = buf.writeVarInt(threshold)
 }
@@ -52,6 +64,7 @@ object LoginPackets {
         reg.clientbound<LoginDisconnectPacket>("disconnect", PacketMapping.of(Version.MINECRAFT_1_8 to 0x00))
         reg.clientbound<LoginSuccessPacket>("success", PacketMapping.of(Version.MINECRAFT_1_8 to 0x02))
         reg.clientbound<SetCompressionPacket>("compress", PacketMapping.of(Version.MINECRAFT_1_8 to 0x03))
+        reg.clientbound<LoginPluginRequestPacket>("login_plugin_request", PacketMapping.ofProtocol(393 to 0x04))
 
         reg.serverbound("login_start", PacketMapping.of(Version.MINECRAFT_1_8 to 0x00)) { buf, version ->
             val name = buf.readString(16)
@@ -69,6 +82,12 @@ object LoginPackets {
                 else -> null // pre-1.19: name only
             }
             LoginStartPacket(name, uuid)
+        }
+        reg.serverbound("login_plugin_response", PacketMapping.ofProtocol(393 to 0x02)) { buf, _ ->
+            val id = buf.readVarInt()
+            val ok = buf.readBoolean()
+            val data = ByteArray(buf.buf.readableBytes()).also { buf.buf.readBytes(it) }
+            LoginPluginResponsePacket(id, ok, data)
         }
         reg.serverbound("login_acknowledged", PacketMapping.of(Version.MINECRAFT_1_20_2 to 0x03)) { _, _ ->
             LoginAcknowledgedPacket()

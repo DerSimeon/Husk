@@ -30,6 +30,8 @@ Every version below reaches the void. "Tested in client" means someone joined wi
 
 Only offline mode is supported for now. Players get the UUID their client sends (1.19.1 and later), or the usual `OfflinePlayer:<name>` UUID on older versions.
 
+Behind a Velocity proxy that uses `player-info-forwarding-mode = "modern"`, set `forwarding.mode = "velocity"` and `forwarding.secret` to the proxy's forwarding secret (or the environment variables `HUSK_FORWARDING_MODE` and `HUSK_FORWARDING_SECRET`). Husk then completes the forwarding handshake, checks its signature, and uses the name and UUID the proxy forwards. Connections without valid forwarding data are kicked, so players can't join directly in this mode. It needs 1.13+ clients, the same as Velocity's modern forwarding.
+
 ## Running it
 
 You need JDK 25.
